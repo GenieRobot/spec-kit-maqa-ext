@@ -1,5 +1,9 @@
 # MAQA Changelog
 
+## 0.1.2 — 2026-03-26
+
+- Coordinator: auto-populate prompt triggers whenever any local spec is missing from the board (not only when board is empty)
+
 ## 0.1.1 — 2026-03-26
 
 - Coordinator: auto-populate prompt when Trello board is empty but local specs exist

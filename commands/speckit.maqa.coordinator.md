@@ -123,16 +123,16 @@ for c in json.load(sys.stdin):
 ")
 ```
 
-**Auto-populate check (Trello mode only):** After fetching board state, if To Do, In Progress, and In Review are all empty AND local `specs/*/tasks.md` files exist, prompt the user:
+**Auto-populate check (Trello mode only):** After fetching board state, check whether any local specs are missing from the board. Collect all card names from every list (Backlog through Done), then compare against `specs/*/tasks.md` entries. If any specs have no matching card, prompt:
 
 ```
-Board appears empty but local specs were found.
-Populate Trello board from specs? [Y/n]
+N spec(s) found locally with no Trello card: 001-user-auth, 003-payments, ...
+Add missing cards to the board? [Y/n]
 ```
 
-- If **Y** (or Enter): execute `speckit.maqa-trello.populate` inline now, then re-fetch board state before continuing to Step 3.
+- If **Y** (or Enter): execute `speckit.maqa-trello.populate` inline now (it skips existing cards automatically), then re-fetch board state before continuing to Step 3.
 - If **n**: continue — user may be managing cards manually.
-- Skip this prompt entirely if the board has any cards in any list, or if no local specs exist.
+- Skip this prompt entirely if all local specs already have a card, or if no local specs exist.
 
 ---
 
