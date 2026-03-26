@@ -1,5 +1,9 @@
 # MAQA Changelog
 
+## 0.1.1 — 2026-03-26
+
+- Coordinator: auto-populate prompt when Trello board is empty but local specs exist
+
 ## 0.1.0 — 2026-03-26
 
 Initial release.
