@@ -12,7 +12,7 @@
 
 Each feature runs in an **isolated git worktree**. The QA agent runs static analysis after each feature completes. You review and merge. The coordinator re-assesses and picks the next unblocked batch automatically.
 
-State is tracked locally in `.maqa/state.json`. With the optional [maqa-trello](https://github.com/GenieRobot/spec-kit-maqa-trello) companion, state lives on a Trello board instead.
+State is tracked locally in `.maqa/state.json`. With an optional board companion (see below), state lives on your project management tool instead.
 
 ## Requirements
 
@@ -28,7 +28,7 @@ specify ext add maqa
 
 > Not in the catalog yet? Install directly:
 > ```bash
-> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.1.0.zip
+> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.1.4.zip
 > ```
 
 ## Quick start
@@ -49,14 +49,28 @@ specify ext add maqa
 
 The coordinator reads your `specs/` directory (spec-kit's standard structure), finds features that are ready to implement, creates worktrees, and returns a SPAWN plan. On Claude Code, feature and QA agents run in parallel as true subagents. On all other tools, the workflow runs in-context.
 
-## Trello integration (optional)
+## Board integrations (optional)
+
+The coordinator auto-detects any installed board companion and enables integration. Install whichever matches your project management tool:
+
+| Tool | Extension | Install |
+|---|---|---|
+| Trello | [maqa-trello](https://github.com/GenieRobot/spec-kit-maqa-trello) | `specify ext add maqa-trello` |
+| Linear | [maqa-linear](https://github.com/GenieRobot/spec-kit-maqa-linear) | `specify ext add maqa-linear` |
+| GitHub Projects | [maqa-github-projects](https://github.com/GenieRobot/spec-kit-maqa-github-projects) | `specify ext add maqa-github-projects` |
+| Jira | [maqa-jira](https://github.com/GenieRobot/spec-kit-maqa-jira) | `specify ext add maqa-jira` |
+| Azure DevOps | [maqa-azure-devops](https://github.com/GenieRobot/spec-kit-maqa-azure-devops) | `specify ext add maqa-azure-devops` |
+
+After installing, run the companion's setup command once (e.g. `/speckit.maqa-trello.setup`), then use `/speckit.maqa.coordinator` as normal — board sync happens automatically.
+
+## CI gate (optional)
 
 ```bash
-specify ext add maqa-trello
-/speckit.maqa-trello.setup
+specify ext add maqa-ci
+/speckit.maqa-ci.setup
 ```
 
-The coordinator auto-detects Trello config and enables board integration. See [maqa-trello](https://github.com/GenieRobot/spec-kit-maqa-trello) for details.
+With [maqa-ci](https://github.com/GenieRobot/spec-kit-maqa-ci) installed, the coordinator checks pipeline status on the feature branch before moving a card to In Review. Supports GitHub Actions, CircleCI, GitLab CI, and Bitbucket Pipelines.
 
 ## Configuration
 
@@ -71,6 +85,7 @@ The coordinator auto-detects Trello config and enables board integration. See [m
 | `qa_cadence` | `"per_feature"` | `per_feature`: QA runs after each feature agent (catches regressions early). `batch_end`: QA runs once when the full batch is done (saves credits). |
 | `max_parallel` | `3` | Max concurrent feature agents |
 | `worktree_base` | `".."` | Where worktrees are created (relative to repo root) |
+| `board` | `"auto"` | Board tool to use. `auto` detects any installed companion. Set explicitly to override, or `local` to skip board sync. |
 | `qa.text` | `true` | Spelling, grammar, placeholder copy |
 | `qa.links` | `true` | Link / route verification |
 | `qa.security` | `true` | Unfiltered output, exposed params, missing auth |
@@ -98,11 +113,13 @@ Claude Code is the recommended tool and the most tested. Other tools are support
 
 ## How features are tracked
 
-Without Trello, the coordinator reads `specs/*/tasks.md` (spec-kit's standard output from `/speckit.tasks`) and tracks state in `.maqa/state.json`:
+The coordinator reads `specs/*/tasks.md` (spec-kit's standard output from `/speckit.tasks`) and tracks feature state:
 
 ```
 todo → in_progress → in_review → done
 ```
+
+Without a board companion, state lives in `.maqa/state.json`. With a board companion installed, each state transition is mirrored to your project management tool automatically.
 
 Dependencies are respected: a feature only starts when all its deps are `done`.
 
