@@ -33,6 +33,18 @@ checklist[M]{item,item_id}:
 
 ---
 
+## CRITICAL — Shell working directory
+
+The Bash tool resets its working directory to the main repo between invocations. If you run `git add`, `git commit`, or test commands without first changing to the worktree, you will corrupt the main repo's git index.
+
+**Every Bash command that touches files or git must be prefixed with `cd <worktree> &&`**, for example:
+```bash
+cd /path/to/3-add-auth && git add -A
+cd /path/to/3-add-auth && bundle exec rspec spec/models/
+```
+
+Never rely on cwd persisting between Bash calls. Always specify the worktree path explicitly.
+
 ## Setup
 
 1. All work happens in the `worktree` path. Never touch the main repo directly.

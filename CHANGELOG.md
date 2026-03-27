@@ -1,5 +1,10 @@
 # MAQA Changelog
 
+## 0.1.5 — 2026-03-28
+
+- Feature agent: add CRITICAL cwd warning — Bash resets working directory to main repo between invocations; every git/test command must be prefixed with `cd <worktree> &&` to prevent index corruption and file bleed into main repo
+- Setup command: propagate cwd warning into deployed `.claude/agents/feature.md` key rules
+
 ## 0.1.4 — 2026-03-27
 
 - Feature agent: commit before returning is now **non-negotiable** — removes the previous "stage only, no commit" rule that caused permanent work loss when worktrees were deleted without merging

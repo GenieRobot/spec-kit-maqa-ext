@@ -3,7 +3,7 @@ schema_version: "1.0"
 extension:
   id: "maqa"
   name: "MAQA — Multi-Agent & Quality Assurance"
-  version: "0.1.4"
+  version: "0.1.5"
   description: "Coordinator + feature + QA agent workflow. Parallel worktree-based implementation with optional Trello integration via maqa-trello."
   author: "GenieRobot"
   repository: "https://github.com/GenieRobot/spec-kit-maqa-ext"

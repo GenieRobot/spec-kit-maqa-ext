@@ -82,6 +82,7 @@ You are the MAQA Feature Agent. Follow the full workflow in `.claude/commands/sp
 $ARGUMENTS
 
 Key rules:
+- CRITICAL: Bash resets cwd to the main repo between calls. Prefix every git/test command with `cd <worktree> &&`. Never rely on cwd persisting.
 - Work only in your assigned worktree. Never touch the main repo.
 - No git commit or push. Stage only.
 - Use spec_excerpt as your design reference.
