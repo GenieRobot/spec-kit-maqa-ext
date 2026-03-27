@@ -67,6 +67,8 @@ The coordinator auto-detects Trello config and enables board integration. See [m
 | `test_command` | `""` | Full test suite — e.g. `npm test`, `pytest`, `bundle exec rspec` |
 | `test_file_command` | `""` | Single file — e.g. `pytest {file}`, `npm test -- {file}` |
 | `tdd` | `false` | Write tests first, then implement. Red is assumed (no pre-run). |
+| `auto_push` | `false` | Push feature branch after commit. Recommended: `true` — without it, work only exists in the local worktree and is lost if the worktree is deleted before merging. |
+| `qa_cadence` | `"per_feature"` | `per_feature`: QA runs after each feature agent (catches regressions early). `batch_end`: QA runs once when the full batch is done (saves credits). |
 | `max_parallel` | `3` | Max concurrent feature agents |
 | `worktree_base` | `".."` | Where worktrees are created (relative to repo root) |
 | `qa.text` | `true` | Spelling, grammar, placeholder copy |

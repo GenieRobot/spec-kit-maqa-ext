@@ -1,5 +1,13 @@
 # MAQA Changelog
 
+## 0.1.4 — 2026-03-27
+
+- Feature agent: commit before returning is now **non-negotiable** — removes the previous "stage only, no commit" rule that caused permanent work loss when worktrees were deleted without merging
+- Feature agent: optional `git push` after commit, gated on new `auto_push` config setting (default: `false`)
+- QA agent: new step 0 — verify a commit exists on the feature branch before proceeding; immediately FAILs if branch is staged-only (catches the work-loss scenario early)
+- Coordinator: reads `qa_cadence` from config and passes `auto_push` to feature agents in SPAWN block
+- Config: added `auto_push` (default `false`) and `qa_cadence` (`per_feature` | `batch_end`, default `per_feature`) to `config-template.yml`
+
 ## 0.1.3 — 2026-03-27
 
 - Coordinator: multi-board auto-detection — detects maqa-trello, maqa-linear, maqa-github-projects, maqa-jira, maqa-azure-devops in priority order
