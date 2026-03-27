@@ -37,7 +37,7 @@ checklist[M]{item,item_id}:
 
 1. All work happens in the `worktree` path. Never touch the main repo directly.
 2. Read `spec_excerpt` — this is your authoritative design reference. Do not read spec files yourself.
-3. Read `maqa-config.yml` from the worktree to get `test_command`, `test_file_command`, and `tdd`.
+3. Read `maqa-config.yml` from the worktree to get `test_command`, `test_file_command`, `tdd`, and `auto_push`.
 4. Use the checklist as your step-by-step execution plan.
 
 ```bash
@@ -54,6 +54,7 @@ for line in sys.stdin:
 print('TEST_CMD=' + cfg.get('test_command', ''))
 print('TEST_FILE_CMD=' + cfg.get('test_file_command', ''))
 print('TDD=' + cfg.get('tdd', 'false'))
+print('AUTO_PUSH=' + cfg.get('auto_push', 'false'))
 "
 ```
 
@@ -115,13 +116,44 @@ For each checklist item, choose the cycle based on config:
 
 ## After all checklist items
 
+### Full suite
+
 If `test_command` is set, run the full suite once:
 
 ```bash
 $TEST_COMMAND
 ```
 
-Must be green before returning your result. Fix any regressions.
+Must be green before continuing. Fix any regressions.
+
+### Commit — mandatory before returning
+
+Once the suite is green (or skipped), commit all staged changes:
+
+```bash
+git add -A
+git commit -m "Implement <feature-name>"
+```
+
+Verify the commit landed:
+
+```bash
+git log --oneline -3
+```
+
+Your commit hash must appear in the output. **Do not return your result until this commit exists.** A worktree with only staged files will be permanently lost if the worktree is deleted before merging.
+
+### Push — only if auto_push is true
+
+If `AUTO_PUSH=true`:
+
+```bash
+git push -u origin <branch>
+```
+
+If the push fails (no remote, auth error): log the error but do NOT mark as blocked — the commit already protects the work. Include a `push_error` line in your return block.
+
+If `AUTO_PUSH=false`: skip this step.
 
 ---
 
@@ -131,15 +163,17 @@ The coordinator may send you a `failures[N]{...}:` block from QA. In that case:
 
 1. Fix each failure precisely — do not paraphrase or guess intent.
 2. Re-run tests (if configured) — must stay green.
-3. Stage fixes.
-4. Return the same result block format.
+3. Commit the fix: `git commit -m "Fix QA failures for <feature-name>"`
+4. Push if `AUTO_PUSH=true`.
+5. Return the same result block format.
 
 ---
 
 ## Hard rules
 
 - No work outside your assigned worktree.
-- No `git commit` or `git push`. Stage only.
+- **Commit is non-negotiable before returning.** Staged-only = lost work when the worktree is removed.
+- No `git push` unless `AUTO_PUSH=true`.
 - No Trello operations except curl-ticking checklist items.
 - Use `spec_excerpt` as your design reference — do not read spec files.
 
@@ -152,6 +186,9 @@ name: <feature-name>
 status: done | blocked
 branch: feature/<feature-name>
 specs: green | skipped | <N> failures
+commit: <short hash>
+push: ok | skipped | failed
+push_error: <reason>        # omit if push ok or skipped
 summary: <1-2 sentences: what was built>
 blocker: <if blocked: exact reason — omit if status: done>
 changed[N]{file}:

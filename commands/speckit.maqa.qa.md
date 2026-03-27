@@ -33,7 +33,23 @@ checklist[M]{item}:
 
 ---
 
-## Step 0 — Read QA config
+## Step 0 — Verify git commit (run FIRST)
+
+```bash
+cd "$WORKTREE"
+git log --oneline -5
+git status --short
+```
+
+- **FAIL immediately** if the branch has no commits beyond the initial branch point (output is empty or shows only a pre-existing commit not from the feature agent).
+- **FAIL immediately** if `git status` shows staged but uncommitted changes with no feature commit present.
+- A worktree with only staged files means the feature agent's work was never persisted. Do not proceed — return `qa_status: FAIL`:
+  ```
+  failures[1]{category,description,location}:
+    Git,"feature branch has no commits — work is staged but not committed and will be lost if the worktree is deleted",n/a
+  ```
+
+## Step 0b — Read QA config
 
 ```bash
 python3 - <<'EOF'

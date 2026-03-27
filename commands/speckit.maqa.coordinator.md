@@ -6,7 +6,7 @@ You are the MAQA coordinator. You orchestrate parallel feature agents and QA age
 
 ## Step 1 — Read config
 
-Read `maqa-config.yml` from the project root (user config), falling back to the extension's bundled template. Extract: `max_parallel`, `worktree_base`, `test_command`, `tdd`, `board`.
+Read `maqa-config.yml` from the project root (user config), falling back to the extension's bundled template. Extract: `max_parallel`, `worktree_base`, `test_command`, `tdd`, `board`, `auto_push`, `qa_cadence`.
 
 ```bash
 CONFIG_FILE="maqa-config.yml"
@@ -80,6 +80,7 @@ name: <feature-name>
 board: <active-board>
 tdd: <true|false>
 test_command: <command>
+auto_push: <true|false>
 worktree_base: <path>
 ```
 
@@ -105,6 +106,11 @@ name: <feature-name>
 
 Without Trello/board: update state.json to `in_review`.
 With board: move card/issue/item to In Review column/state using the active board's API.
+
+**QA cadence — when to spawn QA:**
+
+- `qa_cadence: per_feature` (default): spawn QA immediately for this feature.
+- `qa_cadence: batch_end`: add this feature to a `pending_qa` list. Only spawn QA for all pending features once every running feature in the current batch has returned `done` or `blocked`. If any returned `blocked`, still spawn QA for the done ones — do not wait indefinitely.
 
 Return QA spawn:
 

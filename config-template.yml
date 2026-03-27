@@ -25,6 +25,17 @@ max_parallel: 3           # Max concurrent feature agents
 # Change if your layout requires a different base.
 worktree_base: ".."       # Relative to repo root
 
+# ── Git workflow ──────────────────────────────────────────────────────────────
+# Feature agents always commit before returning. Push is optional.
+# WARNING: disabling auto_push means branches only exist in the worktree.
+# If the worktree is deleted before merging, all uncommitted/unpushed work is lost.
+auto_push: false          # Push feature branch after commit (recommended: true for safety)
+
+# ── QA cadence ────────────────────────────────────────────────────────────────
+# "per_feature": QA runs after each feature agent completes (catches regressions early)
+# "batch_end":   QA runs once when all features in a batch are done (saves credits)
+qa_cadence: "per_feature"
+
 # ── QA checks ─────────────────────────────────────────────────────────────────
 # Disable checks that don't apply to your project type.
 qa:
