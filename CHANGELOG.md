@@ -1,5 +1,11 @@
 # MAQA Changelog
 
+## 0.1.3 — 2026-03-27
+
+- Coordinator: multi-board auto-detection — detects maqa-trello, maqa-linear, maqa-github-projects, maqa-jira, maqa-azure-devops in priority order
+- Coordinator: CI gate integration — checks maqa-ci pipeline status before handing off to QA
+- Config: added `board: auto` field to config-template.yml
+
 ## 0.1.2 — 2026-03-26
 
 - Coordinator: auto-populate prompt triggers whenever any local spec is missing from the board (not only when board is empty)

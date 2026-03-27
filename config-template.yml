@@ -12,6 +12,11 @@ test_file_command: ""     # Single file e.g. "pytest {file}", "npm test -- {file
 # Red is assumed (no pre-run). Requires test_file_command to be set.
 tdd: false
 
+# ── Board integration ─────────────────────────────────────────────────────────
+# "auto" detects any installed companion (maqa-trello, maqa-linear, maqa-github-projects,
+# maqa-jira, maqa-azure-devops). Set explicitly to override, or "local" to skip board.
+board: "auto"
+
 # ── Parallelism ───────────────────────────────────────────────────────────────
 max_parallel: 3           # Max concurrent feature agents
 
