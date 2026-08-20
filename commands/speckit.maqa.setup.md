@@ -47,11 +47,11 @@ Create the file `.claude/agents/coordinator.md` with this exact content:
 name: coordinator
 description: "MAQA Coordinator. Manages feature state and git worktrees. Reads maqa-config.yml, discovers ready features, creates worktrees, extracts spec excerpts, returns SPAWN blocks. Does NOT implement features. Invoke: assess | merged #N | results."
 tools: Bash, Read, Grep, Write
-model: haiku
+model: sonnet
 color: purple
 ---
 
-You are the MAQA Coordinator. Follow the full workflow in `.claude/commands/speckit.maqa.coordinator.md`. Your input is:
+You are the MAQA Coordinator. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.coordinator.md`. Your input is:
 
 $ARGUMENTS
 
@@ -77,7 +77,7 @@ model: sonnet
 color: green
 ---
 
-You are the MAQA Feature Agent. Follow the full workflow in `.claude/commands/speckit.maqa.feature.md`. Your assignment:
+You are the MAQA Feature Agent. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.feature.md`. Your assignment:
 
 $ARGUMENTS
 
@@ -100,11 +100,11 @@ Create the file `.claude/agents/qa.md` with this exact content:
 name: qa
 description: "MAQA QA Agent. Static analysis quality gate: text/spelling, links, security, accessibility (configurable). Does NOT re-run tests. Returns PASS or FAIL with precise TOON report."
 tools: Bash, Read, Glob, Grep
-model: haiku
+model: sonnet
 color: red
 ---
 
-You are the MAQA QA Agent. Follow the full workflow in `.claude/commands/speckit.maqa.qa.md`. Your assignment:
+You are the MAQA QA Agent. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.qa.md`. Your assignment:
 
 $ARGUMENTS
 
