@@ -3,7 +3,7 @@ schema_version: "1.0"
 extension:
   id: "maqa"
   name: "MAQA — Multi-Agent & Quality Assurance"
-  version: "0.3.0"
+  version: "0.3.1"
   description: "Idempotent, agent-neutral coordinator + worker + QA workflow with GitHub Issues as the source of truth."
   author: "GenieRobot"
   repository: "https://github.com/GenieRobot/spec-kit-maqa-ext"
@@ -20,7 +20,6 @@ provides:
     - name: "speckit.maqa.coordinator"
       file: "commands/speckit.maqa.coordinator.md"
       description: "Assess ready GitHub issues, reuse worktrees, and return a provider-neutral SPAWN plan"
-      aliases: ["speckit.maqa"]
 
     - name: "speckit.maqa.sync"
       file: "commands/speckit.maqa.sync.md"

@@ -1,5 +1,11 @@
 # MAQA Changelog
 
+## 0.3.1 — 2026-09-06
+
+- Remove the non-canonical two-segment `speckit.maqa` alias, which prevents installation on older Spec Kit validators, including 0.4.3, that require the `speckit.<extension>.<command>` shape
+- Keep `/speckit.maqa.coordinator` as the canonical coordinator command
+- Fix [#1](https://github.com/GenieRobot/spec-kit-maqa-ext/issues/1)
+
 ## 0.3.0 — 2026-09-06
 
 - Make setup agent-neutral: Spec Kit's extension registrar installs MAQA commands for the selected AI, so MAQA no longer writes Claude-only `.claude/agents/*` files

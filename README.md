@@ -29,7 +29,7 @@ specify ext add maqa
 
 > Not in the catalog yet? Install directly:
 > ```bash
-> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.3.0.zip
+> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.3.1.zip
 > ```
 
 ## Quick start
