@@ -1,130 +1,110 @@
 ---
-description: "One-time Claude Code setup: creates coordinator, feature, and QA as native subagents in .claude/agents/. Run once per project. Other AI tools use the slash commands directly and do not need this step."
+description: "Idempotent MAQA bootstrap for every Spec Kit AI integration. Preserves user config, verifies command registration and GitHub identity, and creates only missing labels."
 ---
 
-You are setting up MAQA native subagents for Claude Code. This is a one-time operation.
+You are the MAQA Setup role. Configure MAQA without assuming Claude Code or any particular agent runtime. Re-running this command must converge to the same state without overwriting user choices or duplicating files, labels, or configuration keys.
 
-## What this does
+## Why no agent-specific files are created
 
-1. Copies `maqa-config.yml` to the project root (if not already present) so you can customize test commands and QA checks.
-2. Creates three files in `.claude/agents/`:
-   - `coordinator.md` — the MAQA coordinator as a Claude Code subagent
-   - `feature.md` — the feature implementation agent
-   - `qa.md` — the QA analysis agent
+`specify extension add maqa` already renders every MAQA command into the selected AI's native command or skill format through Spec Kit's command registrar. Do not create `.claude/agents`, `.gemini`, `.agents`, `.github/agents`, or any other provider-specific files here.
 
-After this, `/speckit.maqa.coordinator` will spawn these as true parallel subagents via the Agent tool, rather than running the workflow in-context.
+The coordinator returns provider-neutral `SPAWN`, `SPAWN_QA`, and `SPAWN_FIX` data. A parent AI with native delegation may run those roles in parallel; an AI without delegation runs the same assignments sequentially or in context.
 
-## Not using Claude Code?
+## Step 1 — Verify the installed extension
 
-You do not need this step. The slash commands (`/speckit.maqa.coordinator`, `/speckit.maqa.feature`, `/speckit.maqa.qa`) work directly in any AI tool's session. Skip this command.
+From the repository root, require these canonical installed files:
 
----
+```text
+.specify/extensions/maqa/extension.yml
+.specify/extensions/maqa/config-template.yml
+.specify/extensions/maqa/commands/speckit.maqa.coordinator.md
+.specify/extensions/maqa/commands/speckit.maqa.sync.md
+.specify/extensions/maqa/commands/speckit.maqa.feature.md
+.specify/extensions/maqa/commands/speckit.maqa.qa.md
+```
 
-## Setup
+Read `.specify/init-options.json` when present and report the selected AI and whether skills mode is enabled. Do not fail merely because the AI is unknown or future; the canonical extension commands remain the fallback contract.
 
-Create the agents directory and drop the config file:
+Check the selected AI's registered commands using Spec Kit's recorded extension registry. If registration is missing, stop with the exact repair command `specify extension update maqa`; do not synthesize provider-specific files.
+
+## Step 2 — Initialize config without clobbering it
+
+If `maqa-config.yml` does not exist, copy the bundled template exactly once.
+
+If it exists, preserve every current value and comment. Add only missing top-level compatibility keys with these defaults:
+
+```yaml
+source_of_truth: "github-issues"
+github_label_prefix: "maqa"
+dispatch_mode: "auto"
+board_mirror: "none"
+```
+
+Never replace the whole file and never duplicate a key. If `source_of_truth` exists with a value other than `github-issues`, stop and report the conflict instead of changing it.
+
+Treat a repeated run with no missing keys as `config_action: no_op`.
+
+## Step 3 — Lock GitHub identity
+
+Resolve `OWNER/REPO` only from `git remote get-url origin`, supporting normal GitHub HTTPS and SSH URLs. Verify that exact value using:
 
 ```bash
-mkdir -p .claude/agents
-
-# Copy maqa-config.yml to project root if not already present
-if [ ! -f "maqa-config.yml" ]; then
-  cp .specify/extensions/maqa/config-template.yml maqa-config.yml
-  echo "Created maqa-config.yml — edit test_command and qa checks before running the coordinator."
-fi
+gh auth status
+gh repo view "$OWNER/$REPO" --json nameWithOwner,url,defaultBranchRef
 ```
 
-Now write the following three files exactly as shown.
+Stop if the remote is not GitHub, authentication fails, or the returned `nameWithOwner` differs. Every following `gh` command must include `--repo "$OWNER/$REPO"`.
 
----
+## Step 4 — Create only missing workflow labels
 
-### Write `.claude/agents/coordinator.md`
+Read `github_label_prefix` from config and derive:
 
-Create the file `.claude/agents/coordinator.md` with this exact content:
-
-```markdown
----
-name: coordinator
-description: "MAQA Coordinator. Manages feature state and git worktrees. Reads maqa-config.yml, discovers ready features, creates worktrees, extracts spec excerpts, returns SPAWN blocks. Does NOT implement features. Invoke: assess | merged #N | results."
-tools: Bash, Read, Grep, Write
-model: sonnet
-color: purple
----
-
-You are the MAQA Coordinator. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.coordinator.md`. Your input is:
-
-$ARGUMENTS
-
-Key rules:
-- Never spawn feature or QA agents. Return SPAWN blocks only.
-- Never commit, push, or merge.
-- All structured output in TOON format.
-- Write state to `.maqa/state.json` before returning SPAWN block.
+```text
+<prefix>
+<prefix>:in-progress
+<prefix>:in-review
+<prefix>:blocked
 ```
 
----
+Fetch current labels once with `gh label list --repo "$OWNER/$REPO" --limit 1000 --json name`. Create a label only when its exact name is absent. Never use `--force`, never overwrite an existing label's color or description, and never swallow an authentication or API error.
 
-### Write `.claude/agents/feature.md`
+Use these defaults only for newly created labels:
 
-Create the file `.claude/agents/feature.md` with this exact content:
+| Suffix | Color | Description |
+|---|---|---|
+| none | `5319E7` | Managed by MAQA |
+| `in-progress` | `FBCA04` | MAQA worker active |
+| `in-review` | `0E8A16` | MAQA QA or merge review |
+| `blocked` | `B60205` | MAQA work blocked |
 
-```markdown
----
-name: feature
-description: "MAQA Feature Agent. Implements one feature in one git worktree. Reads maqa-config.yml for test runner and TDD mode. Ticks Trello checklist in real-time if card_id is not local. Reports done or blocked."
-tools: Bash, Read, Write, Edit, Glob, Grep
-model: sonnet
-color: green
----
+## Step 5 — Report legacy Claude setup without deleting it
 
-You are the MAQA Feature Agent. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.feature.md`. Your assignment:
+If `.claude/agents/coordinator.md`, `feature.md`, or `qa.md` exists from MAQA 0.2.x or earlier, report it under `legacy_files`. Do not edit or delete user files. They are no longer required because Spec Kit registers MAQA commands for all AIs.
 
-$ARGUMENTS
+## Return format
 
-Key rules:
-- CRITICAL: Bash resets cwd to the main repo between calls. Prefix every git/test command with `cd <worktree> &&`. Never rely on cwd persisting.
-- Work only in your assigned worktree. Never touch the main repo.
-- No git commit or push. Stage only.
-- Use spec_excerpt as your design reference.
-- Follow the implementation cycle matching your config (no tests / tests / TDD).
+Return only this TOON block:
+
+```text
+setup_status: configured | no_op | blocked
+agent: <selected AI or unknown>
+skills_mode: true | false | unknown
+repository: <OWNER/REPO>
+config_action: created | updated_missing_keys | no_op
+labels_created[N]{name}:
+  <label>
+labels_existing[N]{name}:
+  <label>
+legacy_files[N]{path}:
+  <path>
+next: /speckit.maqa.sync
+summary: <one sentence>
 ```
 
----
+## Hard rules
 
-### Write `.claude/agents/qa.md`
-
-Create the file `.claude/agents/qa.md` with this exact content:
-
-```markdown
----
-name: qa
-description: "MAQA QA Agent. Static analysis quality gate: text/spelling, links, security, accessibility (configurable). Does NOT re-run tests. Returns PASS or FAIL with precise TOON report."
-tools: Bash, Read, Glob, Grep
-model: sonnet
-color: red
----
-
-You are the MAQA QA Agent. Follow the full workflow in `.specify/extensions/maqa/commands/speckit.maqa.qa.md`. Your assignment:
-
-$ARGUMENTS
-
-Key rules:
-- Static analysis only. Do not re-run the test suite.
-- Every check either passes or fails. No partial credit.
-- Return only the TOON result block — nothing else.
-- State failures exactly: category, description, file:line.
-```
-
----
-
-## Done
-
-The three agent files are now in `.claude/agents/`. The coordinator will spawn them as true parallel subagents when you run `/speckit.maqa.coordinator`.
-
-To verify:
-
-```bash
-ls -la .claude/agents/
-```
-
-You should see `coordinator.md`, `feature.md`, and `qa.md`.
+- Never write provider-specific agent files.
+- Never overwrite user config or duplicate config keys.
+- Never recreate or modify an existing GitHub label.
+- Never access a repository other than the verified GitHub `origin`.
+- A successful second run with unchanged inputs must return `setup_status: no_op`.

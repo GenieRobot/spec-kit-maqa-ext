@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "maqa"
   name: "MAQA — Multi-Agent & Quality Assurance"
-  version: "0.1.6"
-  description: "Coordinator + feature + QA agent workflow. Parallel worktree-based implementation with optional Trello integration via maqa-trello."
+  version: "0.3.0"
+  description: "Idempotent, agent-neutral coordinator + worker + QA workflow with GitHub Issues as the source of truth."
   author: "GenieRobot"
   repository: "https://github.com/GenieRobot/spec-kit-maqa-ext"
   license: "MIT"
@@ -12,38 +12,44 @@ extension:
 
 requires:
   speckit_version: ">=0.3.0"
+  commands:
+    - "speckit.taskstoissues"
 
 provides:
   commands:
     - name: "speckit.maqa.coordinator"
       file: "commands/speckit.maqa.coordinator.md"
-      description: "Assess ready features, create worktrees, return SPAWN plan for parallel feature agents"
+      description: "Assess ready GitHub issues, reuse worktrees, and return a provider-neutral SPAWN plan"
       aliases: ["speckit.maqa"]
+
+    - name: "speckit.maqa.sync"
+      file: "commands/speckit.maqa.sync.md"
+      description: "Idempotently reconcile Spec Kit tasks with GitHub Issues using taskstoissues without creating duplicates"
 
     - name: "speckit.maqa.feature"
       file: "commands/speckit.maqa.feature.md"
-      description: "Implement one feature in one worktree. Tests optional. Reports done or blocked."
+      description: "Implement one GitHub issue in one worktree. Tests optional. Reports done or blocked."
 
     - name: "speckit.maqa.qa"
       file: "commands/speckit.maqa.qa.md"
-      description: "Static analysis quality gate: text, links, security, accessibility (all configurable)."
+      description: "Validate one issue implementation against its issue and local spec context."
 
     - name: "speckit.maqa.setup"
       file: "commands/speckit.maqa.setup.md"
-      description: "One-time Claude Code setup: deploys coordinator/feature/qa as native subagents in .claude/agents/"
+      description: "Idempotent, agent-neutral bootstrap for MAQA config, repository identity, and GitHub labels"
 
   config:
     - name: "maqa-config.yml"
       template: "config-template.yml"
-      description: "MAQA workflow configuration (test command, TDD mode, QA checks, parallelism, auto_push, qa_cadence)"
+      description: "MAQA workflow configuration (GitHub Issues source, tests, QA, parallelism, pushes, and cadence)"
       required: false
 
 hooks:
   after_tasks:
-    command: "speckit.maqa.coordinator"
+    command: "speckit.maqa.sync"
     optional: true
-    prompt: "Launch MAQA coordinator to start parallel implementation?"
-    description: "Optionally start the coordinator workflow after task breakdown"
+    prompt: "Idempotently reconcile these tasks into the GitHub issues MAQA uses as its source of truth?"
+    description: "Create only missing issues through Spec Kit taskstoissues, preserving existing issue state"
 
 tags:
   - "multi-agent"
@@ -52,3 +58,6 @@ tags:
   - "workflow"
   - "parallel"
   - "tdd"
+  - "github-issues"
+  - "idempotent"
+  - "agent-neutral"
