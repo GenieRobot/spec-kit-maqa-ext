@@ -1,5 +1,14 @@
 # MAQA Changelog
 
+## 0.2.0 — 2026-09-06
+
+- Make plain GitHub Issues the default and authoritative MAQA work source
+- Register Spec Kit's built-in `/speckit.taskstoissues` as the optional `after_tasks` hook so issue creation happens through the upstream command
+- Remove automatic selection of Trello, Linear, GitHub Projects, Jira, Azure DevOps, and `.maqa/state.json` as competing workflow authorities; companion boards are mirrors only
+- Use GitHub issue state plus `maqa:*` labels for `todo`, `in_progress`, `in_review`, and `blocked`; close issues only after merge
+- Keep `tasks.md` as read-only dependency and checklist context for worker and QA agents
+- Refuse to mutate issues unless `origin` resolves to the same GitHub repository being queried
+
 ## 0.1.6 — 2026-08-20
 
 - Setup command: fix deployed subagent templates pointing at a nonexistent `.claude/commands/speckit.maqa.*.md` path — commands are installed by `specify ext add` under `.specify/extensions/maqa/commands/`, not `.claude/commands/`. Native subagents (coordinator, feature, QA) could not previously locate their own workflow instructions on current spec-kit Claude integrations (skills-based, not commands-based).

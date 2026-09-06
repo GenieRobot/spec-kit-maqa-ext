@@ -1,5 +1,5 @@
 ---
-description: "One-time Claude Code setup: creates coordinator, feature, and QA as native subagents in .claude/agents/. Run once per project. Other AI tools use the slash commands directly and do not need this step."
+description: "One-time Claude Code setup: creates GitHub-Issues-first coordinator, feature, and QA subagents in .claude/agents/."
 ---
 
 You are setting up MAQA native subagents for Claude Code. This is a one-time operation.
@@ -12,7 +12,7 @@ You are setting up MAQA native subagents for Claude Code. This is a one-time ope
    - `feature.md` — the feature implementation agent
    - `qa.md` — the QA analysis agent
 
-After this, `/speckit.maqa.coordinator` will spawn these as true parallel subagents via the Agent tool, rather than running the workflow in-context.
+After this, the parent session can execute the returned worker and QA plans as true parallel subagents rather than running every role in context.
 
 ## Not using Claude Code?
 
@@ -45,7 +45,7 @@ Create the file `.claude/agents/coordinator.md` with this exact content:
 ```markdown
 ---
 name: coordinator
-description: "MAQA Coordinator. Manages feature state and git worktrees. Reads maqa-config.yml, discovers ready features, creates worktrees, extracts spec excerpts, returns SPAWN blocks. Does NOT implement features. Invoke: assess | merged #N | results."
+description: "MAQA Coordinator. Uses GitHub Issues as authoritative state, manages issue worktrees, and returns SPAWN blocks. Does not implement features. Invoke: assess | merged #N | results."
 tools: Bash, Read, Grep, Write
 model: sonnet
 color: purple
@@ -58,8 +58,10 @@ $ARGUMENTS
 Key rules:
 - Never spawn feature or QA agents. Return SPAWN blocks only.
 - Never commit, push, or merge.
+- GitHub Issues are authoritative; tasks.md is read-only implementation context.
+- Never use `.maqa/state.json` or a companion board as competing state.
 - All structured output in TOON format.
-- Write state to `.maqa/state.json` before returning SPAWN block.
+- Lock every GitHub operation to the repository parsed from remote.origin.url.
 ```
 
 ---
@@ -71,7 +73,7 @@ Create the file `.claude/agents/feature.md` with this exact content:
 ```markdown
 ---
 name: feature
-description: "MAQA Feature Agent. Implements one feature in one git worktree. Reads maqa-config.yml for test runner and TDD mode. Ticks Trello checklist in real-time if card_id is not local. Reports done or blocked."
+description: "MAQA Feature Agent. Implements one GitHub issue in one worktree, tests it, commits it, and reports done or blocked."
 tools: Bash, Read, Write, Edit, Glob, Grep
 model: sonnet
 color: green
@@ -84,8 +86,9 @@ $ARGUMENTS
 Key rules:
 - CRITICAL: Bash resets cwd to the main repo between calls. Prefix every git/test command with `cd <worktree> &&`. Never rely on cwd persisting.
 - Work only in your assigned worktree. Never touch the main repo.
-- No git commit or push. Stage only.
-- Use spec_excerpt as your design reference.
+- The assigned GitHub issue is authoritative; use task_context as read-only implementation guidance.
+- Commit before returning done. Push only when auto_push is true.
+- Never mutate the issue or edit tasks.md workflow checkboxes.
 - Follow the implementation cycle matching your config (no tests / tests / TDD).
 ```
 
@@ -98,7 +101,7 @@ Create the file `.claude/agents/qa.md` with this exact content:
 ```markdown
 ---
 name: qa
-description: "MAQA QA Agent. Static analysis quality gate: text/spelling, links, security, accessibility (configurable). Does NOT re-run tests. Returns PASS or FAIL with precise TOON report."
+description: "MAQA QA Agent. Validates one committed implementation against its authoritative GitHub issue and supplied Spec Kit context."
 tools: Bash, Read, Glob, Grep
 model: sonnet
 color: red
@@ -110,6 +113,8 @@ $ARGUMENTS
 
 Key rules:
 - Static analysis only. Do not re-run the test suite.
+- The GitHub issue is authoritative; tasks.md is context only.
+- Verify the exact assigned branch and commit before reviewing.
 - Every check either passes or fails. No partial credit.
 - Return only the TOON result block — nothing else.
 - State failures exactly: category, description, file:line.
@@ -119,7 +124,7 @@ Key rules:
 
 ## Done
 
-The three agent files are now in `.claude/agents/`. The coordinator will spawn them as true parallel subagents when you run `/speckit.maqa.coordinator`.
+The three agent files are now in `.claude/agents/`. Run `/speckit.maqa.coordinator`; the parent session can dispatch its returned plans to these subagents.
 
 To verify:
 
