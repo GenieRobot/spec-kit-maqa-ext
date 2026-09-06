@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "maqa"
   name: "MAQA — Multi-Agent & Quality Assurance"
-  version: "0.2.0"
-  description: "Coordinator + feature + QA agent workflow. GitHub Issues are the source of truth; tasks.md supplies read-only execution context."
+  version: "0.3.0"
+  description: "Idempotent, agent-neutral coordinator + worker + QA workflow with GitHub Issues as the source of truth."
   author: "GenieRobot"
   repository: "https://github.com/GenieRobot/spec-kit-maqa-ext"
   license: "MIT"
@@ -19,8 +19,12 @@ provides:
   commands:
     - name: "speckit.maqa.coordinator"
       file: "commands/speckit.maqa.coordinator.md"
-      description: "Assess ready GitHub issues, create worktrees, return a SPAWN plan for parallel feature agents"
+      description: "Assess ready GitHub issues, reuse worktrees, and return a provider-neutral SPAWN plan"
       aliases: ["speckit.maqa"]
+
+    - name: "speckit.maqa.sync"
+      file: "commands/speckit.maqa.sync.md"
+      description: "Idempotently reconcile Spec Kit tasks with GitHub Issues using taskstoissues without creating duplicates"
 
     - name: "speckit.maqa.feature"
       file: "commands/speckit.maqa.feature.md"
@@ -32,7 +36,7 @@ provides:
 
     - name: "speckit.maqa.setup"
       file: "commands/speckit.maqa.setup.md"
-      description: "One-time Claude Code setup: deploys coordinator/feature/qa as native subagents in .claude/agents/"
+      description: "Idempotent, agent-neutral bootstrap for MAQA config, repository identity, and GitHub labels"
 
   config:
     - name: "maqa-config.yml"
@@ -42,10 +46,10 @@ provides:
 
 hooks:
   after_tasks:
-    command: "speckit.taskstoissues"
+    command: "speckit.maqa.sync"
     optional: true
-    prompt: "Create the GitHub issues that MAQA will use as its source of truth?"
-    description: "Use Spec Kit's taskstoissues command before MAQA coordinates implementation"
+    prompt: "Idempotently reconcile these tasks into the GitHub issues MAQA uses as its source of truth?"
+    description: "Create only missing issues through Spec Kit taskstoissues, preserving existing issue state"
 
 tags:
   - "multi-agent"
@@ -55,3 +59,5 @@ tags:
   - "parallel"
   - "tdd"
   - "github-issues"
+  - "idempotent"
+  - "agent-neutral"

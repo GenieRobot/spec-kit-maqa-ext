@@ -1,5 +1,14 @@
 # MAQA Changelog
 
+## 0.3.0 — 2026-09-06
+
+- Make setup agent-neutral: Spec Kit's extension registrar installs MAQA commands for the selected AI, so MAQA no longer writes Claude-only `.claude/agents/*` files
+- Add `/speckit.maqa.sync`, an idempotent wrapper around core `/speckit.taskstoissues` that creates only missing issues and falls back to `gh` when an agent has no GitHub MCP integration
+- Make label creation, issue transitions, comments, branch/worktree creation, result processing, QA processing, and merge processing safe to repeat
+- Add stable reconciliation keys and event markers so interrupted runs can resume without duplicate issues, comments, or workers
+- Define provider-neutral `SPAWN`, `SPAWN_QA`, and `SPAWN_FIX` contracts that any AI can execute natively or sequentially
+- Bump the extension from the unreleased 0.2.0 candidate to 0.3.0
+
 ## 0.2.0 — 2026-09-06
 
 - Make plain GitHub Issues the default and authoritative MAQA work source

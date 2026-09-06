@@ -4,22 +4,22 @@
 
 ## How it works
 
-```
-/speckit.maqa.coordinator   →   SPAWN[N] feature agents in parallel worktrees
-                            →   SPAWN_QA[N] QA agent per completed feature
-                            →   coordinator merged #N   →   re-assess, next batch
+```text
+speckit.maqa.sync          →   core taskstoissues for missing issues only
+speckit.maqa.coordinator   →   SPAWN[N] feature assignments in isolated worktrees
+                           →   SPAWN_QA[N] QA assignments
+                           →   coordinator merged #N   →   re-assess, next batch
 ```
 
 Each GitHub task issue runs in an **isolated git worktree**. The QA agent validates the committed implementation against that issue. You review and merge; the coordinator closes the issue only after verifying the commit reached the default branch.
 
-GitHub Issues are the source of truth. Spec Kit's `tasks.md` remains read-only implementation and dependency context for worker and QA agents; MAQA does not maintain a competing `.maqa/state.json` backlog.
+GitHub Issues are the source of truth. Spec Kit's `tasks.md` remains read-only implementation and dependency context for worker and QA agents; MAQA does not maintain a competing `.maqa/state.json` backlog. Every command is designed to be safely retried after success, interruption, or partial failure.
 
 ## Requirements
 
 - [spec-kit](https://github.com/github/spec-kit) `>=0.3.0`
 - `git` with worktree support
 - [GitHub CLI](https://cli.github.com/) authenticated for the repository in `remote.origin.url`
-- `python3` (for JSON parsing in coordinator scripts)
 
 ## Installation
 
@@ -29,7 +29,7 @@ specify ext add maqa
 
 > Not in the catalog yet? Install directly:
 > ```bash
-> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.2.0.zip
+> specify ext add https://github.com/GenieRobot/spec-kit-maqa-ext/archive/refs/tags/maqa-v0.3.0.zip
 > ```
 
 ## Quick start
@@ -38,7 +38,7 @@ specify ext add maqa
 # 1. Install
 specify ext add maqa
 
-# 2. (Claude Code only) Deploy native subagents — run once per project
+# 2. Idempotently initialize config, verify the selected AI, and create labels
 /speckit.maqa.setup
 
 # 3. Configure your test runner (optional but recommended)
@@ -47,14 +47,27 @@ specify ext add maqa
 # 4. Generate tasks with Spec Kit
 /speckit.tasks
 
-# 5. Accept MAQA's after_tasks prompt, which runs Spec Kit's built-in command
-/speckit.taskstoissues
+# 5. Accept MAQA's after_tasks prompt. It invokes Spec Kit taskstoissues only
+#    for tasks whose GitHub issues do not already exist.
+/speckit.maqa.sync
 
 # 6. Run the coordinator
 /speckit.maqa.coordinator
 ```
 
-The coordinator reads state from the issues created by `/speckit.taskstoissues`, correlates each issue with its local Spec Kit context, creates worktrees, and returns a SPAWN plan. On Claude Code, feature and QA agents run in parallel as true subagents. On all other tools, the workflow runs in-context.
+The coordinator reads state from the issues created through Spec Kit's `taskstoissues` command, correlates each issue with local Spec Kit context, reuses or creates stable worktrees, and returns a provider-neutral SPAWN plan. Spec Kit installs MAQA into the selected AI's native command or skills format. AIs with worker delegation can execute assignments in parallel; all others execute the same plan sequentially.
+
+## Idempotency
+
+MAQA uses stable reconciliation and event keys rather than a private state database:
+
+- Task issues are keyed by the repository-relative `tasks.md` path plus task ID.
+- Feature and remediation assignments use stable assignment keys recorded as git commit trailers.
+- Worktree paths and branch names are deterministic and reused on retry.
+- GitHub comments contain stable hidden event markers; existing transitions and comments are not repeated.
+- Setup preserves user configuration and existing label definitions, adding only missing defaults.
+
+This makes the workflow resumable across AI sessions and safe to run from different Spec Kit-supported tools.
 
 ## Board mirrors (optional)
 
@@ -68,7 +81,7 @@ Companion extensions remain available for teams that want a board view:
 | Jira | [maqa-jira](https://github.com/GenieRobot/spec-kit-maqa-jira) | `specify ext add maqa-jira` |
 | Azure DevOps | [maqa-azure-devops](https://github.com/GenieRobot/spec-kit-maqa-azure-devops) | `specify ext add maqa-azure-devops` |
 
-MAQA 0.2.x never reads these boards as workflow authority and does not auto-select one. Configure `board_mirror` explicitly if a companion supports issue-state mirroring; mirror failures never change GitHub issue state or scheduling.
+MAQA 0.3.x never reads these boards as workflow authority and does not auto-select one. Configure `board_mirror` explicitly if a companion supports issue-state mirroring; mirror failures never change GitHub issue state or scheduling.
 
 ## CI gate (optional)
 
@@ -85,8 +98,9 @@ With [maqa-ci](https://github.com/GenieRobot/spec-kit-maqa-ci) installed, the co
 
 | Field | Default | Description |
 |---|---|---|
-| `source_of_truth` | `"github-issues"` | The authoritative work source in MAQA 0.2.x. |
+| `source_of_truth` | `"github-issues"` | The authoritative work source in MAQA 0.3.x. |
 | `github_label_prefix` | `"maqa"` | Prefix for issue workflow labels. |
+| `dispatch_mode` | `"auto"` | Use native parallel delegation when available, otherwise run assignments sequentially. |
 | `test_command` | `""` | Full test suite — e.g. `npm test`, `pytest`, `bundle exec rspec` |
 | `test_file_command` | `""` | Single file — e.g. `pytest {file}`, `npm test -- {file}` |
 | `tdd` | `false` | Write tests first, then implement. Red is assumed (no pre-run). |
@@ -106,20 +120,21 @@ With [maqa-ci](https://github.com/GenieRobot/spec-kit-maqa-ci) installed, the co
 
 | Command | Description |
 |---|---|
-| `/speckit.taskstoissues` | Core Spec Kit command that creates the authoritative GitHub task issues |
+| `/speckit.taskstoissues` | Core Spec Kit command used by MAQA to create task issues |
+| `/speckit.maqa.sync` | Idempotently call `taskstoissues` for missing issues only |
 | `/speckit.maqa.coordinator` | Assess issues, create worktrees, return SPAWN plan |
 | `/speckit.maqa.feature` | Implement one issue in one worktree |
 | `/speckit.maqa.qa` | Validate one committed issue implementation |
-| `/speckit.maqa.setup` | Claude Code: deploy native subagents to `.claude/agents/` |
+| `/speckit.maqa.setup` | Agent-neutral, idempotent config and GitHub-label bootstrap |
 
 ## AI tool support
 
-| Tool | Mode |
+| AI capability | Mode |
 |---|---|
-| **Claude Code** | Native subagents after `/speckit.maqa.setup` — true parallel execution |
-| **Gemini CLI, Cursor, Copilot, and all others** | Slash commands — same workflow, in-context |
+| Native worker/subagent delegation | Execute provider-neutral SPAWN assignments in parallel |
+| No worker delegation | Execute the same assignments sequentially or in context |
 
-Claude Code is the recommended tool and the most tested. Other tools are supported but not yet extensively tested — feedback welcome.
+The extension contains no Claude-only setup files or runtime assumptions. Command filenames and invocation syntax are rendered by Spec Kit's extension registrar for the selected AI, including future integrations that support the same registrar contract.
 
 ## How work is tracked
 
@@ -132,7 +147,7 @@ open → maqa:in-progress → maqa:in-review → closed
 
 An open issue without a MAQA state label is ready/todo. The coordinator applies labels and comments; the issue is closed only after its commit is verified on the default branch.
 
-Explicit issue dependencies are authoritative. When an issue has none, the matched `tasks.md` dependency graph and `[P]` markers guide scheduling without becoming a second state store. Ambiguous or missing issue/task matches stop reconciliation and direct the user back to `/speckit.taskstoissues`.
+Explicit issue dependencies are authoritative. When an issue has none, the matched `tasks.md` dependency graph and `[P]` markers guide scheduling without becoming a second state store. Ambiguous matches stop reconciliation; missing matches direct the user to `/speckit.maqa.sync`.
 
 ## License
 

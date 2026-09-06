@@ -12,6 +12,10 @@ source_of_truth: "github-issues"
 # Closed issues are done; open issues without a state label are ready/todo.
 github_label_prefix: "maqa"
 
+# "auto" lets the parent AI use native parallel delegation when available and
+# otherwise execute the same provider-neutral SPAWN plan sequentially.
+dispatch_mode: "auto"
+
 # ── Test runner ───────────────────────────────────────────────────────────────
 # Leave empty to skip all test steps.
 test_command: ""          # Full suite  e.g. "npm test", "pytest", "bundle exec rspec"
